@@ -19,7 +19,8 @@ const DataTable = (function() {
     let _paginationOptions = [];
     let _filter = false;
     let _filterContiner = null;
-    let _filterColumns  = [];                     
+    let _filterColumns  = [];
+    let _filterAPIEndpoint = "";                 
     let _rowActions = null; // This will have list of actions that can be performed per row [{type: "edit", action: "method name", apiCall: "endpoint"}]
 
     let currentSortColumn = null;
@@ -51,7 +52,8 @@ const DataTable = (function() {
         //Filter settings
         _filter = initializeData.filter;
         _filterContiner = initializeData.filterContainer;
-        _filterColumns  = initializeData.filterColumns;     
+        _filterColumns  = initializeData.filterColumns;
+        _filterAPIEndpoint = initializeData.filterAPIEndpoint;
 
         _rowActions = initializeData.rowActions;
 
