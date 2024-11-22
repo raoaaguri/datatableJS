@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="dataTable.css">
+        <script src="dynamicTableColumns.js"></script>
+        <script src="data-table.js"></script>
+    </head>
+    <body>
+        <h1>Data Table Example</h1>
+
+        <div class="container__data--table">
+            <div id="filter__container"></div>
+            <div id="table-container" class="table__container"></div>
+            <div id="paginations__container"></div>
+        </div>
+        
+    </body>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(e) {
+            console.log("Example page has loaded!");
+            const tableSettings = {
+                tableContainer: "table-container",
+                apiEndPoint: "http://universities.hipolabs.com/search?country=United+States",
+                columns: data_table_columns,
+                fixedHeader: true, 
+                fixedColumn: false,
+                sort: false, 
+                search: false,
+                pagination: true,
+                paginationContainer: "paginations__container",
+                paginationOptions:[10,50,100,200], 
+                rowActions: null,
+                filter: false,
+                filterContainer: "filter__container",
+                filterColumns: data_table_columns, 
+            }
+            DataTable.init(tableSettings);
+        });
+
+    </script>
+
+</html>

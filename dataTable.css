@@ -1,0 +1,105 @@
+/* Root Styles*/
+:root{
+    --table-font-color: rgb(0, 0, 0);
+    --table-header-fontColor: rgb(0, 0, 0);
+    --table-body-fontColor: rgb(0, 0, 0);
+    --table-header-bgcolor: rgb(133,133,133);
+    --table-border-color: rgb(133,133,133);
+    --table-font-family: monospace, arial;
+
+}
+
+.Data__Table--HeaderCell.sort-asc::after { content: " ▲"; }
+.Data__Table--HeaderCell.sort-desc::after { content: " ▼"; }
+
+.pagination, .records-per-page, .filter-container, .active-filters {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.pagination button, .apply-filters, .clear-filters {
+    padding: 5px 10px;
+    margin: 0 2px;
+}
+.filter-container input {
+    padding: 4px;
+    width: 120px;
+}   
+
+/*Table Container styles start*/
+    .table__container {
+        width: 100%;
+        height: 50%;
+        overflow: auto;
+    }
+/*Table Container styles end*/
+
+/*Data table styles start*/
+
+    .Data__Table--Container {
+        display: block;
+        color: var(--table-font-color);
+        font-size: 1rem;
+        font-family: var(--table-font-family);
+    }
+
+    .table__container{
+        border: 1px solid rgb(133, 133, 133);
+    }
+
+    div.Data__Table--Row:last-child,
+    div.Data__Table--Row .Data__Table--Cell:last-child {
+        border: none;
+    }
+
+    .Data__Table--Container .Data__Table--HeaderRow,
+    .Data__Table--Container .Data__Table--Row {
+        display: flex;
+        border-bottom: 1px solid var(--table-border-color);
+    }
+
+    .Data__Table--Container .Data__Table--HeaderRow {
+        background-color: var(--table-header-bgcolor);
+    }
+
+    .Data__Table--Container .Data__Table--HeaderCell,
+    .Data__Table--Container .Data__Table--Cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        justify-items: center;
+        border-right: 1px solid var(--table-border-color);
+        width: 160px;
+        max-height: 30px;
+    }
+
+    .Data__Table--Container .Data__Table--HeaderCell.right,
+    .Data__Table--Container .Data__Table--Cell.right {
+        justify-content: right;
+    }
+
+    .Data__Table--Container .Data__Table--HeaderCell.left,
+    .Data__Table--Container .Data__Table--Cell.left {
+        justify-content: left;
+    }
+
+
+    .Data__Table--HeaderRow.sticky {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .Data__Table--HeaderCell.fixed-column {
+        z-index: 2;
+    }
+
+    .fixed-column {
+        position: sticky;
+        left: 0;
+        background-color: white;
+    }
+
+
+/*Data table styles end*/

@@ -1,0 +1,620 @@
+<html>
+    <head>
+
+        <style>
+
+            /* Root Styles*/
+            :root{
+                --table-font-color: rgb(0, 0, 0);
+                --table-header-fontColor: rgb(0, 0, 0);
+                --table-body-fontColor: rgb(0, 0, 0);
+                --table-header-bgcolor: rgb(133,133,133);
+                --table-border-color: rgb(133,133,133);
+                --table-font-family: monospace, arial;
+
+            }
+
+            th.sort-asc::after { content: " ▲"; }
+            th.sort-desc::after { content: " ▼"; }
+            .pagination, .records-per-page, .filter-container, .active-filters {
+                margin-top: 10px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .pagination button, .apply-filters, .clear-filters {
+                padding: 5px 10px;
+                margin: 0 2px;
+            }
+            .filter-container input {
+                padding: 4px;
+                width: 120px;
+            }   
+
+            /*Table Container styles start*/
+                .table__container {
+                    width: 100%;
+                    height: 50%;
+                    overflow: auto;
+                }
+            /*Table Container styles end*/
+
+            /*Data table styles start*/
+
+                .Data__Table--Container {
+                    display: block;
+                    color: var(--table-font-color);
+                    font-size: 1rem;
+                    font-family: var(--table-font-family);
+                    border: 1px solid rgb(133, 133, 133);
+                }
+
+                div.Data__Table--Row:last-child,
+                div.Data__Table--Row .Data__Table--Cell:last-child {
+                    border: none;
+                }
+
+                .Data__Table--Container .Data__Table--HeaderRow,
+                .Data__Table--Container .Data__Table--Row {
+                    display: flex;
+                    border-bottom: 1px solid var(--table-border-color);
+                }
+
+                .Data__Table--Container .Data__Table--HeaderRow {
+                    background-color: var(--table-header-bgcolor);
+                }
+
+                .Data__Table--Container .Data__Table--HeaderCell,
+                .Data__Table--Container .Data__Table--Cell {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    justify-items: center;
+                    border-right: 1px solid var(--table-border-color);
+                    width: 160px;
+                    max-height: 30px;
+                }
+
+                .Data__Table--Container .Data__Table--HeaderCell.right,
+                .Data__Table--Container .Data__Table--Cell.right {
+                    justify-content: right;
+                }
+
+                .Data__Table--Container .Data__Table--HeaderCell.left,
+                .Data__Table--Container .Data__Table--Cell.left {
+                    justify-content: left;
+                }
+
+
+                .Data__Table--HeaderRow.sticky {
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
+                }
+
+                .Data__Table--HeaderCell.fixed-column {
+                    z-index: 2;
+                }
+
+                .fixed-column {
+                    position: sticky;
+                    left: 0;
+                    background-color: white;
+                }
+
+
+            /*Data table styles end*/
+        </style>
+
+    </head>
+    <body>
+        <h1>Data Table Example</h1>
+
+        <div class="filter-container" id="filter-container"></div>
+        <button class="apply-filters" onclick="DataTable.applyFilters()">Apply Filters</button>
+        <button class="clear-filters" onclick="DataTable.clearAllFilters()">Clear All Filters</button>
+        
+        <div class="active-filters" id="active-filters"></div>
+
+        <div class="data__table--container">
+            <div id="table-container" class="table__container">
+
+            </div>
+        </div>
+
+        <div class="records-per-page">
+            <label for="recordsPerPage">Records per page: </label>
+            <select id="recordsPerPage">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+            </select>
+        </div>
+        <div id="pagination" class="pagination"></div>
+
+        
+    </body>
+
+        <div class="Data__Table--Container">
+            <div class="Data__Table--HeaderRow Data__Table--Row">
+                <div class="Data__Table--HeaderCell Data__Table--Cell">
+                    <input type="checkbox" class="select-all" name="horns" />
+                </div>
+                <div class="Data__Table--HeaderCell Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Name </span>
+                </div>
+                <div class="Data__Table--HeaderCell Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Age </span>
+                </div>
+                <div class="Data__Table--HeaderCell Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Status </span>
+                </div>
+                <div class="Data__Table--HeaderCell Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Actions </span>
+                </div>
+            </div>
+            <div class="Data__Table--Row">
+                <div class=" Data__Table--Cell">
+                    <input type="checkbox" class="select-item" name="horns" />
+                </div>
+                <div class="Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Name </span>
+                </div>
+                <div class="Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Age </span>
+                </div>
+                <div class="Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Status </span>
+                </div>
+                <div class="Data__Table--Cell">
+                    <span class="Table__Cell--Item"> Actions </span>
+                </div>
+            </div>
+        </div>
+
+    <script>
+
+
+        const DataTable = (function() {
+            //Mandatory props to be passed 
+            let _tableContainer = null; // This is where I will store the value passed as table container.. TYPE == String
+            let _apiEndPoint = null; // This will hold the API endpoint URL.. TYPE == String
+            let _columns = []; /*    Pass array of column names that you want to see as column get this column values from API endpoint Data.. 
+                                    This can be a array of objects where we can pass name as column label, key as column value and sort if needed
+                                    This can also pass if the children is true or not.*/
+
+            //optional props 
+            let _fixedHeader = false; // This will hold if we want Fixed header or not.. TYPE == Boolean
+            let _fixedColumns = []; // This will take the columns which need to be fixed position even after the scroll..
+            let _sort = false; // This will unable sort option on all the columns 
+            let _search = false; // This is a search functionality on the table data
+            let _pagination = null; /*This flag will represent if pagination is enabled or not and it is a type of object 
+                                    {type: "numbers or next and previous buttons or both", position: "top right/ top left/ top center/ bottom right/ bottom left / bottom center", show: true}
+                                    */
+            let _rowActions = null; // This will have list of actions that can be performed per row [{type: "edit", action: "method name", apiCall: "endpoint"}]
+
+            let currentSortColumn = null;
+            let isAscending = true;
+
+            let currentPage = 1;
+            let recordsPerPage = 10;
+
+            let apiData = []; // Global variable to store fetched data
+
+            let filteredData = []; // Data to display after filtering
+            let filters = {}; // Store filter values
+
+            const init = function(initializeData) {
+                _tableContainer = initializeData.tableContainer;
+                _apiEndPoint = initializeData.apiEndPoint;
+                _columns = initializeData.columns;
+
+                _fixedHeader = initializeData.fixedHeader;
+                _fixedColumns = initializeData.fixedColumns;
+                _sort = initializeData.sort;
+                _search = initializeData.search;
+                _pagination = initializeData.pagination;
+
+                _rowActions = initializeData.rowActions;
+
+                fetchData();
+
+                 // Handle records per page changes
+                document.getElementById('recordsPerPage').addEventListener('change', (e) => {
+                    recordsPerPage = parseInt(e.target.value);
+                    currentPage = 1; // Reset to first page when records per page changes
+                    createTable(apiData);
+                });
+            }
+
+             // Function to sort data and re-render the table
+             const sortTable = function(columnKey) {
+                // Toggle sort direction if the same column is clicked again
+                if (currentSortColumn === columnKey) {
+                    isAscending = !isAscending;
+                } else {
+                    currentSortColumn = columnKey;
+                    isAscending = true;
+                }
+
+                // Sort data based on the columnKey and direction
+                filteredData.sort((a, b) => {
+                    if (a[columnKey] < b[columnKey]) return isAscending ? -1 : 1;
+                    if (a[columnKey] > b[columnKey]) return isAscending ? 1 : -1;
+                    return 0;
+                });
+
+                currentPage = 1; // Reset to first page after sorting
+
+                // Re-render the table with sorted data
+                createTable(filteredData);
+
+                // Update the sort indicator on the column headers
+                updateSortIndicator(columnKey);
+                
+            }
+
+            // Function to update sort indicator on headers
+            const updateSortIndicator = function (columnKey) {
+                document.querySelectorAll('Data__Table--HeaderRow').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+                const header = document.querySelector(`div[data-key="${columnKey}"]`);
+                header.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            }
+
+            // Function to navigate to a specific page
+            const goToPage = function (page) {
+                currentPage = page;
+                createTable(filteredData);
+            }
+
+
+             // Function to render pagination controls
+            const renderPagination = function () {
+                const paginationContainer = document.getElementById('pagination');
+                const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+                paginationContainer.innerHTML = '';
+
+                if (currentPage > 1) {
+                    paginationContainer.innerHTML += `<button onclick="DataTable.goToPage(${currentPage - 1})">Prev</button>`;
+                }
+
+                for (let i = 1; i <= totalPages; i++) {
+                    paginationContainer.innerHTML += `<button onclick="DataTable.goToPage(${i})">${i}</button>`;
+                }
+
+                if (currentPage < totalPages) {
+                    paginationContainer.innerHTML += `<button onclick="DataTable.goToPage(${currentPage + 1})">Next</button>`;
+                }
+            }
+
+             // Apply filters to the data
+            const applyFilters = function () {
+                filteredData = apiData.filter(row => {
+                    return _columns.every(column => {
+                        const key = column.key;
+                        const filterValue = filters[key] || '';
+                        const cellValue = row[key]?.toString().toLowerCase() || '';
+                        return cellValue.includes(filterValue);
+                    });
+                });
+
+                currentPage = 1; // Reset to first page after applying filters
+                createTable(filteredData);
+                showActiveFilters();
+            }
+
+             // Function to create filter inputs for each column
+            const createFilterInputs = function (columns) {
+                const filterContainer = document.getElementById('filter-container');
+                filterContainer.innerHTML = '';
+                columns.forEach(column => {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.placeholder = `Filter by ${column.label}`;
+                    input.dataset.key = column.key;
+                    input.addEventListener('input', (e) => {
+                        filters[e.target.dataset.key] = e.target.value.trim().toLowerCase();
+                    });
+                    filterContainer.appendChild(input);
+                });
+            }
+
+             // Function to show active filters
+            const showActiveFilters = function () {
+                const activeFiltersContainer = document.getElementById('active-filters');
+                activeFiltersContainer.innerHTML = '';
+
+                Object.keys(filters).forEach(key => {
+                    if (filters[key]) {
+                        const filterDiv = document.createElement('div');
+                        filterDiv.textContent = `${_columns.find(col => col.key === key).label}: ${filters[key]}`;
+                        const clearButton = document.createElement('button');
+                        clearButton.textContent = 'x';
+                        clearButton.onclick = () => clearFilter(key);
+                        filterDiv.appendChild(clearButton);
+                        activeFiltersContainer.appendChild(filterDiv);
+                    }
+                });
+            }
+
+            // Function to clear a specific filter
+            const clearFilter = function (key) {
+                filters[key] = '';
+                document.querySelector(`input[data-key="${key}"]`).value = '';
+                applyFilters();
+            }
+
+            // Function to clear all filters
+            const clearAllFilters = function () {
+                filters = {};
+                document.querySelectorAll('.filter-container input').forEach(input => input.value = '');
+                applyFilters();
+            }
+
+
+            const fetchData = function() {
+
+                const apiUrl = 'http://universities.hipolabs.com/search?country=United+States';
+                const outputElement = document.getElementById('output');
+                debugger;
+
+                const data = Array.from({ length: 100 }, (_, i) => ({
+                    id: i + 1,
+                    name: `Name ${i + 1}`,
+                    age: Math.floor(Math.random() * 60) + 20,
+                    location: `City A`,
+                    name1: `Name ${i + 1}`,
+                    age1: Math.floor(Math.random() * 60) + 20,
+                    location1: `City B`,
+                    name2: `Name ${i + 1}`,
+                    age2: Math.floor(Math.random() * 60) + 20,
+                    location2: `City C`,
+                    name3: `Name ${i + 1}`,
+                    age3: Math.floor(Math.random() * 60) + 20,
+                    location3: `City D`,
+                    name4: `Name ${i + 1}`,
+                    age4: Math.floor(Math.random() * 60) + 20,
+                    location4: `City E`,
+                    name5: `Name ${i + 1}`,
+                    age5: Math.floor(Math.random() * 60) + 20,
+                    location5: `City F`,
+                    name6: `Name ${i + 1}`,
+                    age6: Math.floor(Math.random() * 60) + 20,
+                    location6: `City G`,
+                    name7: `Name ${i + 1}`,
+                    age7: Math.floor(Math.random() * 60) + 20,
+                    location7: `City H`,
+                }));
+
+                apiData = data;
+
+                filteredData = data; // Initialize filteredData with all data
+
+                createTable(filteredData);
+
+                 // Handle records per page changes
+                 document.getElementById('recordsPerPage').addEventListener('change', (e) => {
+                    recordsPerPage = parseInt(e.target.value);
+                    currentPage = 1; // Reset to first page when records per page changes
+                    createTable(filteredData);
+                });  
+
+                /*fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Display data in an HTML element
+                    createTable(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });*/
+
+            }
+            
+            const createTable = function(data) {
+                console.log(data);
+
+                const startIdx = (currentPage - 1) * recordsPerPage;
+                const endIdx = startIdx + recordsPerPage;
+                const paginatedData = data.slice(startIdx, endIdx);
+
+
+                _columns = [
+                        {   
+                            'key': 'id', 
+                            'label': 'Id', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name', 
+                            'label': 'Name', 
+                            'sort': true, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'age', 
+                            'label': 'Age', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location', 
+                            'label': 'Location', 
+                            'sort': true, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name1', 
+                            'label': 'Name1', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'age1', 
+                            'label': 'Age1', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location1', 
+                            'label': 'Location1', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name2', 
+                            'label': 'Name2', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'age2', 
+                            'label': 'Age2', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location2', 
+                            'label': 'Location2', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name3', 
+                            'label': 'Name3', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'age3', 
+                            'label': 'Age3', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location3', 
+                            'label': 'Location3', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name4', 
+                            'label': 'Name4', 
+                            'sort': false, 
+                            'width': '400px'
+                        },
+                        {   
+                            'key': 'age4', 
+                            'label': 'Age4', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location4', 
+                            'label': 'Location4', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'name5', 
+                            'label': 'Name5', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'age5', 
+                            'label': 'Age5', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                        {   
+                            'key': 'location5', 
+                            'label': 'Location5', 
+                            'sort': false, 
+                            'width': '180px'
+                        },
+                ];
+
+                createFilterInputs(_columns);    
+
+                let tableWidth = _columns.length *  180 + "px";
+                    
+
+                let tableHTML = `<div class="Data__Table--Container" style="width: ${tableWidth}">`;
+                    
+                    let tableHeaderHTML = `<div class="Data__Table--HeaderRow Data__Table--Row sticky">
+                                                <div class="Data__Table--HeaderCell Data__Table--Cell fixed-column">
+                                                    <input type="checkbox" class="select-all" name="horns" />
+                                                </div>`;
+                    debugger;
+                    _columns.forEach((column) => {
+                        tableHeaderHTML += `<div class="Data__Table--HeaderCell Data__Table--Cell" style="width:${column.width}" ${column.sort ? `data-key="${column.key}"` : ''}>
+                                                <span class="Table__Cell--Item"> ${column.label} </span> 
+                                            </div>`;
+                    });
+
+                    tableHeaderHTML += `</div>`;
+
+                    tableHTML += `  ${tableHeaderHTML}`;
+
+
+                    /*tableHTML += `<div class="Data__Table--Row">
+                                    <div class=" Data__Table--Cell">
+                                        <input type="checkbox" class="select-item" name="horns" />
+                                    </div>`;*/
+
+                    tableHTML += paginatedData.map(row => {
+                                    return `<div class="Data__Table--Row"> 
+                                                <div class=" Data__Table--Cell fixed-column">
+                                                    <input type="checkbox" class="select-item" name="horns" />
+                                                </div>`
+                                                    +
+                                                _columns.map(column => {
+                                                return `<div class="Data__Table--Cell" style="width:${column.width}">
+                                                    <span class="Table__Cell--Item">${row[column.key] || ''}</span>
+                                                </div>`
+                                            } 
+                                            ).join('') + '</div>';
+                                }).join('');
+                    
+                    tableHTML += `</div>`;            
+
+                tableHTML += `</div>`;     
+                document.getElementById("table-container").innerHTML = tableHTML;
+
+                _columns.forEach(column => {
+                    if (column.sort) {
+                        document.querySelector(`div[data-key="${column.key}"]`).addEventListener('click', () => {
+                            sortTable(column.key);
+                        });
+                    }
+                });
+
+                // Render pagination controls
+                renderPagination();
+            }
+
+            return {
+                init: fetchData,
+                goToPage: goToPage,
+                applyFilters: applyFilters,
+                clearAllFilters: clearAllFilters
+            }
+
+        })();
+
+        document.addEventListener("DOMContentLoaded", function(e) {
+            console.log("Example page has loaded!");
+            DataTable.init();
+        });
+
+    </script>
+
+</html>
